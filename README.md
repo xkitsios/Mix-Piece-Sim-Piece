@@ -1,4 +1,4 @@
-# Sim-Piece
+# Mix-Piece / Sim-Piece
 *Sim-Piece: Highly Accurate Piecewise Linear Approximation through Similar Segment Merging*
 
 ## Description
@@ -36,7 +36,8 @@ The 𝑟𝑎𝑛𝑔𝑒 is defined as the difference between the maximum and th
 
 
 ### PLA Methods
-- [Sim-Piece](http://vldb.org/pvldb/volumes/16/paper/Sim-Piece%3A%20Highly%20Accurate%20Piecewise%20Linear%20Approximation%20through%20Similar%20Segment%20Merging)
+- [Mix-Piece](https://link.springer.com/article/10.1007/s00778-024-00862-z) - [PDF file]()
+- [Sim-Piece](https://dl.acm.org/doi/10.14778/3594512.3594521) - [PDF file](https://xkitsios.github.io/assets/pdf/simpiece-pvldb23.pdf)
 - [Swing](https://dl.acm.org/doi/10.14778/1687627.1687645)
 - [PMCMR](https://ieeexplore.ieee.org/document/1260811)
 
@@ -51,6 +52,10 @@ The 𝑟𝑎𝑛𝑔𝑒 is defined as the difference between the maximum and th
 - [Wind Speed](https://data.neonscience.org/data-products/DP1.20059.001/RELEASE-2022)
 - [Wind Direction](https://data.neonscience.org/data-products/DP1.20059.001/RELEASE-2022)
 - [Pressure](https://data.neonscience.org/data-products/DP1.20004.001/RELEASE-2022)
+- [BTCUSD]()
+- [ETHUSD]()
+- [SPX]()
+- [STOXX50E]()
 
 ### Example Output
 >/Cricket.csv.gz  
@@ -118,4 +123,4 @@ The 𝑟𝑎𝑛𝑔𝑒 is defined as the difference between the maximum and th
 - [Xenophon Kitsios](https://xkitsios.github.io/)
 - [Panagiotis Liakos](https://cgi.di.uoa.gr/~p.liakos/)
 - [Katia Papakonstantinopoulou](https://www2.aueb.gr/users/katia/)
-- [Yannis Kotidis](http://pages.cs.aueb.gr/~kotidis/)
+- [Yannis Kotidis](https://pages.aueb.gr/users/kotidis/)
