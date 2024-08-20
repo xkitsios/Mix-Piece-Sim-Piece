@@ -1,39 +1,53 @@
-package gr.aueb.delorean.simpiece;
+package io.github.xkitsios;
 
 import com.github.luben.zstd.Zstd;
-import gr.aueb.delorean.util.Encoding.FloatEncoder;
-import gr.aueb.delorean.util.Encoding.UIntEncoder;
-import gr.aueb.delorean.util.Encoding.VariableByteEncoder;
-import gr.aueb.delorean.util.Point;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Sim-Piece Algorithm for Compressing Time-Series Data
+ */
 public class SimPiece {
-    private ArrayList<SimPieceSegment> segments;
+    private static ArrayList<SimPieceSegment> segments;
 
-    private double epsilon;
-    private long lastTimeStamp;
+    private static double epsilon;
+    private static long lastTimeStamp;
 
-    public SimPiece(List<Point> points, double epsilon) throws IOException {
-        if (points.isEmpty()) throw new IOException();
+    /**
+     * Compress a list of Point and return a binary representation
+     * @param points Time-series data
+     * @param error Maximum absolute error
+     * @return Binary representation
+     * @throws Exception
+     */
+    public static byte[] compress(List<Point> points, double error) throws Exception {
+        if (points.isEmpty() || error <= 0) throw new Exception();
 
-        this.epsilon = epsilon;
-        this.lastTimeStamp = points.get(points.size() - 1).getTimestamp();
-        this.segments = mergePerB(compress(points));
+        epsilon = error;
+        lastTimeStamp = points.get(points.size() - 1).getTimestamp();
+        segments = mergePerB(compress(points));
+        return toByteArray();
     }
 
-    public SimPiece(byte[] bytes, boolean variableByte, boolean zstd) throws IOException {
-        readByteArray(bytes, variableByte, zstd);
+    /**
+     * Decompress a binary representation and return a list of Points
+     * @param binary Binary representation
+     * @return Time-series data
+     * @throws IOException
+     */
+    public static List<Point> decompress(byte[] binary) throws IOException {
+        readByteArray(binary);
+        return toPoints();
     }
 
-    private double quantization(double value) {
+    private static double quantization(double value) {
         return Math.round(value / epsilon) * epsilon;
     }
 
-    private int createSegment(int startIdx, List<Point> points, ArrayList<SimPieceSegment> segments) {
+    private static int createSegment(int startIdx, List<Point> points, ArrayList<SimPieceSegment> segments) {
         long initTimestamp = points.get(startIdx).getTimestamp();
         double b = quantization(points.get(startIdx).getValue());
         if (startIdx + 1 == points.size()) {
@@ -68,7 +82,7 @@ public class SimPiece {
         return points.size();
     }
 
-    private ArrayList<SimPieceSegment> compress(List<Point> points) {
+    private static ArrayList<SimPieceSegment> compress(List<Point> points) {
         ArrayList<SimPieceSegment> segments = new ArrayList<>();
         int currentIdx = 0;
         while (currentIdx < points.size()) currentIdx = createSegment(currentIdx, points, segments);
@@ -76,7 +90,7 @@ public class SimPiece {
         return segments;
     }
 
-    private ArrayList<SimPieceSegment> mergePerB(ArrayList<SimPieceSegment> segments) {
+    private static ArrayList<SimPieceSegment> mergePerB(ArrayList<SimPieceSegment> segments) {
         double aMinTemp = -Double.MAX_VALUE;
         double aMaxTemp = Double.MAX_VALUE;
         double b = Double.NaN;
@@ -127,7 +141,7 @@ public class SimPiece {
         return mergedSegments;
     }
 
-    public List<Point> decompress() {
+    private static List<Point> toPoints() {
         segments.sort(Comparator.comparingLong(SimPieceSegment::getInitTimestamp));
         List<Point> points = new ArrayList<>();
         long currentTimeStamp = segments.get(0).getInitTimestamp();
@@ -148,7 +162,7 @@ public class SimPiece {
         return points;
     }
 
-    private void toByteArrayPerBSegments(ArrayList<SimPieceSegment> segments, boolean variableByte, ByteArrayOutputStream outStream) throws IOException {
+    private static void toByteArrayPerBSegments(ArrayList<SimPieceSegment> segments, ByteArrayOutputStream outStream) throws IOException {
         TreeMap<Integer, HashMap<Double, ArrayList<Long>>> input = new TreeMap<>();
         for (SimPieceSegment segment : segments) {
             double a = segment.getA();
@@ -169,12 +183,11 @@ public class SimPiece {
             VariableByteEncoder.write(bSegments.getValue().size(), outStream);
             for (Map.Entry<Double, ArrayList<Long>> aSegment : bSegments.getValue().entrySet()) {
                 FloatEncoder.write(aSegment.getKey().floatValue(), outStream);
-                if (variableByte) Collections.sort(aSegment.getValue());
+                Collections.sort(aSegment.getValue());
                 VariableByteEncoder.write(aSegment.getValue().size(), outStream);
                 long previousTS = 0;
                 for (Long timestamp : aSegment.getValue()) {
-                    if (variableByte) VariableByteEncoder.write((int) (timestamp - previousTS), outStream);
-                    else UIntEncoder.write(timestamp, outStream);
+                    VariableByteEncoder.write((int) (timestamp - previousTS), outStream);
                     previousTS = timestamp;
                 }
             }
@@ -182,26 +195,21 @@ public class SimPiece {
     }
 
 
-    public byte[] toByteArray(boolean variableByte, boolean zstd) throws IOException {
+    private static byte[] toByteArray() throws IOException {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         byte[] bytes;
 
         FloatEncoder.write((float) epsilon, outStream);
-
-        toByteArrayPerBSegments(segments, variableByte, outStream);
-
-        if (variableByte) VariableByteEncoder.write((int) lastTimeStamp, outStream);
-        else UIntEncoder.write(lastTimeStamp, outStream);
-
-        if (zstd) bytes = Zstd.compress(outStream.toByteArray());
-        else bytes = outStream.toByteArray();
+        toByteArrayPerBSegments(segments, outStream);
+        VariableByteEncoder.write((int) lastTimeStamp, outStream);
+        bytes = Zstd.compress(outStream.toByteArray());
 
         outStream.close();
 
         return bytes;
     }
 
-    private ArrayList<SimPieceSegment> readMergedPerBSegments(boolean variableByte, ByteArrayInputStream inStream) throws IOException {
+    private static ArrayList<SimPieceSegment> readMergedPerBSegments(ByteArrayInputStream inStream) throws IOException {
         ArrayList<SimPieceSegment> segments = new ArrayList<>();
         long numB = VariableByteEncoder.read(inStream);
         if (numB == 0) return segments;
@@ -215,8 +223,7 @@ public class SimPiece {
                 int numTimestamps = VariableByteEncoder.read(inStream);
                 long timestamp = 0;
                 for (int k = 0; k < numTimestamps; k++) {
-                    if (variableByte) timestamp += VariableByteEncoder.read(inStream);
-                    else timestamp = UIntEncoder.read(inStream);
+                    timestamp += VariableByteEncoder.read(inStream);
                     segments.add(new SimPieceSegment(timestamp, a, (float) (b * epsilon)));
                 }
             }
@@ -225,16 +232,13 @@ public class SimPiece {
         return segments;
     }
 
-    private void readByteArray(byte[] input, boolean variableByte, boolean zstd) throws IOException {
-        byte[] binary;
-        if (zstd) binary = Zstd.decompress(input, input.length * 2); //TODO: How to know apriori original size?
-        else binary = input;
+    private static void readByteArray(byte[] input) throws IOException {
+        byte[] binary = Zstd.decompress(input, input.length * 2); //TODO: How to know apriori original size?
         ByteArrayInputStream inStream = new ByteArrayInputStream(binary);
 
-        this.epsilon = FloatEncoder.read(inStream);
-        this.segments = readMergedPerBSegments(variableByte, inStream);
-        if (variableByte) this.lastTimeStamp = VariableByteEncoder.read(inStream);
-        else this.lastTimeStamp = UIntEncoder.read(inStream);
+        epsilon = FloatEncoder.read(inStream);
+        segments = readMergedPerBSegments(inStream);
+        lastTimeStamp = VariableByteEncoder.read(inStream);
         inStream.close();
     }
 }

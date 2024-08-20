@@ -1,4 +1,6 @@
-package gr.aueb.delorean.util;
+package io.github.xkitsios.util;
+
+import io.github.xkitsios.Point;
 
 import java.util.List;
 
@@ -11,9 +13,5 @@ public class TimeSeries {
         this.data = data;
         this.range = range;
         this.size = data.size() * (4 + 4);
-    }
-
-    public int length() {
-        return data.size();
     }
 }

@@ -1,4 +1,6 @@
-package gr.aueb.delorean.util;
+package io.github.xkitsios.util;
+
+import io.github.xkitsios.Point;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -8,7 +10,7 @@ import java.util.zip.GZIPInputStream;
 public class TimeSeriesReader {
     public static TimeSeries getTimeSeries(InputStream inputStream, String delimiter, boolean gzip) {
         ArrayList<Point> ts = new ArrayList<>();
-        double max = Double.MIN_VALUE;
+        double max = -Double.MAX_VALUE;
         double min = Double.MAX_VALUE;
 
         try {

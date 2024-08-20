@@ -1,6 +1,6 @@
-package gr.aueb.delorean.simpiece;
+package io.github.xkitsios;
 
-public class SimPieceSegment {
+class MixPieceSegment {
 
     private final long initTimestamp;
     private final double aMin;
@@ -8,11 +8,11 @@ public class SimPieceSegment {
     private final double a;
     private final double b;
 
-    public SimPieceSegment(long initTimestamp, double a, double b) {
+    public MixPieceSegment(long initTimestamp, double a, double b) {
         this(initTimestamp, a, a, b);
     }
 
-    public SimPieceSegment(long initTimestamp, double aMin, double aMax, double b) {
+    public MixPieceSegment(long initTimestamp, double aMin, double aMax, double b) {
         this.initTimestamp = initTimestamp;
         this.aMin = aMin;
         this.aMax = aMax;
